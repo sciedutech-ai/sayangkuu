@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Waktunya Sahur, Sayang! 🌙</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,7 +13,16 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
             overflow: hidden;
+            /* FIX 2: Memaksa background sepenuh layar */
+            height: 100vh; 
+            width: 100vw;
             background: linear-gradient(to bottom right, #1e1b4b, #581c87, #be185d);
+            
+            /* FIX 3: Mencegah zoom/scroll tidak sengaja saat tap-tap di layar HP */
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
 
         @keyframes floatUpRight {
@@ -38,6 +47,8 @@
             cursor: pointer;
             user-select: none;
             transition: transform 0.2s;
+            /* Tambahan agar area klik emoji di HP lebih nyaman */
+            padding: 10px; 
         }
 
         .glass-panel {
@@ -63,13 +74,11 @@
         }
     </style>
 </head>
-<body class="text-white">
-
-    <button onclick="toggleMute()" class="absolute top-4 right-4 z-50 p-3 rounded-full glass-panel hover:bg-white/20 transition-all">
+<body class="text-white relative"> <button onclick="toggleMute()" class="absolute top-4 right-4 z-50 p-3 rounded-full glass-panel hover:bg-white/20 transition-all">
         <i id="audio-icon" data-lucide="music" class="text-pink-200"></i>
     </button>
 
-    <div id="intro-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+    <div id="intro-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
         <div class="mb-8 relative">
             <i data-lucide="moon" class="w-24 h-24 text-yellow-200 fill-yellow-200 animate-pulse"></i>
             <i data-lucide="star" class="w-8 h-8 text-yellow-100 fill-yellow-100 absolute -top-2 -right-4 animate-bounce"></i>
@@ -85,19 +94,19 @@
         </button>
     </div>
 
-    <div id="game-screen" class="hidden absolute inset-0">
+    <div id="game-screen" class="hidden absolute inset-0 w-full h-full">
         <div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md">
             <div class="glass-panel rounded-full p-4 flex flex-col items-center">
                 <span id="score-text" class="text-pink-100 text-sm mb-2">Kumpulkan Energi: 0 / 20</span>
-                <div class="w-full bg-black/30 rounded-full h-3 overflow-hidden">
-                    <div id="progress-bar" class="bg-gradient-to-r from-pink-400 to-rose-500 h-full w-0 transition-all duration-300"></div>
+                <div class="w-full bg-black/30 rounded-full h-3 overflow-hidden relative">
+                    <div id="progress-bar" class="absolute left-0 top-0 bg-gradient-to-r from-pink-400 to-rose-500 h-full w-0 transition-all duration-300"></div>
                 </div>
             </div>
         </div>
-        <div id="game-area" class="absolute inset-0"></div>
+        <div id="game-area" class="absolute inset-0 w-full h-full overflow-hidden"></div>
     </div>
 
-    <div id="win-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+    <div id="win-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
         <div class="glass-panel p-8 rounded-3xl max-w-lg shadow-2xl">
             <i data-lucide="heart" class="w-16 h-16 text-rose-400 mx-auto mb-4 fill-current heart-button"></i>
             <h2 class="text-3xl font-bold mb-4">Selamat Sahur, Sayang! 🥰</h2>
@@ -111,12 +120,12 @@
     </div>
 
     <script>
-        // Inisialisasi Icons
         lucide.createIcons();
 
         let score = 0;
         const targetScore = 20;
         let isMuted = false;
+        let spawnInterval;
         const emojis = ['❤️', '💖', '🍗', '🍳', '🥛', '🍚', '🥞', '🥰'];
         const audio = new Audio('https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3');
         audio.loop = true;
@@ -131,17 +140,19 @@
 
         function playPopSound() {
             if (isMuted) return;
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.frequency.setValueAtTime(600, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.1);
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } catch(e) { console.log('Audio API tidak didukung'); }
         }
 
         function startGame() {
@@ -168,16 +179,21 @@
             item.style.fontSize = (Math.random() * 1.5 + 2) + 'rem';
             item.style.animation = `${isRight ? 'floatUpRight' : 'floatUpLeft'} ${duration}s linear forwards`;
 
-            item.onclick = () => {
+            // Menggunakan event touchstart agar lebih responsif di HP
+            item.addEventListener('touchstart', handleTap, {passive: false});
+            item.addEventListener('mousedown', handleTap);
+
+            function handleTap(e) {
+                e.preventDefault(); // Mencegah klik ganda di HP
                 score++;
                 playPopSound();
                 updateUI();
                 item.remove();
                 if (score >= targetScore) winGame();
-            };
+            }
 
             area.appendChild(item);
-            setTimeout(() => item.remove(), duration * 1000);
+            setTimeout(() => { if(area.contains(item)) item.remove() }, duration * 1000);
         }
 
         function updateUI() {
