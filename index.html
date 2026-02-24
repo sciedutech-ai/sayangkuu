@@ -1,0 +1,301 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Heart, Moon, Star, Music, VolumeX, Sparkles } from 'lucide-react';
+
+export default function App() {
+  const [gameState, setGameState] = useState('intro'); // intro, playing, win
+  const [score, setScore] = useState(0);
+  const [items, setItems] = useState([]);
+  const [isMuted, setIsMuted] = useState(false);
+  
+  const targetScore = 20;
+  const audioRef = useRef(null);
+  const gameAreaRef = useRef(null);
+
+  // Emoji untuk game (Makanan sahur + cinta)
+  const emojis = ['❤️', '💖', '🍗', '🍳', '🥛', '🍚', '🥞', '🥰'];
+
+  // Inisialisasi musik latar
+  useEffect(() => {
+    // Menggunakan musik instrumen piano romantis yang royalty-free
+    audioRef.current = new Audio('https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.5;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const playPopSound = () => {
+    if (isMuted) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+      console.log("AudioContext not supported");
+    }
+  };
+
+  const startGame = () => {
+    setGameState('playing');
+    setScore(0);
+    setItems([]);
+    if (audioRef.current) {
+      audioRef.current.play().catch(e => console.log("Audio play blocked until interaction"));
+    }
+  };
+
+  // Game Loop: Memunculkan item
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    const spawnInterval = setInterval(() => {
+      const id = Math.random().toString(36).substr(2, 9);
+      const left = Math.random() * 80 + 10; // Posisi horizontal 10% hingga 90%
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      const size = Math.random() * 1.5 + 2.0; // Ukuran sedikit diperbesar (2rem - 3.5rem)
+      
+      // DURASI DIPERPANJANG: 6 sampai 10 detik agar lebih lambat dan santai
+      const duration = Math.random() * 4 + 6; 
+      
+      // Arah ayunan random ke kiri atau kanan
+      const sway = Math.random() > 0.5 ? 1 : -1;
+
+      const newItem = { id, left, emoji, size, duration, sway };
+      
+      setItems(prev => [...prev, newItem]);
+
+      // Menghapus item persis setelah durasi animasinya selesai (sampai atas)
+      setTimeout(() => {
+        setItems(prev => prev.filter(item => item.id !== id));
+      }, duration * 1000);
+
+    }, 700); // Jeda kemunculan tiap 700ms
+
+    return () => clearInterval(spawnInterval);
+  }, [gameState]);
+
+  // Cek Kondisi Menang
+  useEffect(() => {
+    if (score >= targetScore && gameState === 'playing') {
+      setTimeout(() => setGameState('win'), 500);
+    }
+  }, [score, gameState]);
+
+  const handleItemClick = (id) => {
+    playPopSound();
+    setItems(prev => prev.filter(item => item.id !== id));
+    setScore(prev => prev + 1);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 font-sans text-white overflow-hidden relative select-none touch-none">
+      
+      {/* Custom Styles untuk Animasi */}
+      <style dangerouslySetInnerHTML={{__html: `
+        /* ANIMASI DIPERBARUI: Dari bawah layar persis hingga jauh ke atas layar (-120vh) */
+        @keyframes floatUpRight {
+          0% { transform: translate(0, 10vh) rotate(0deg) scale(0.5); opacity: 0; }
+          10% { opacity: 1; transform: translate(15px, -10vh) rotate(45deg) scale(0.7); }
+          50% { transform: translate(-15px, -60vh) rotate(180deg) scale(1); }
+          90% { opacity: 1; transform: translate(15px, -100vh) rotate(315deg) scale(1.1); }
+          100% { transform: translate(0, -120vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+        @keyframes floatUpLeft {
+          0% { transform: translate(0, 10vh) rotate(0deg) scale(0.5); opacity: 0; }
+          10% { opacity: 1; transform: translate(-15px, -10vh) rotate(-45deg) scale(0.7); }
+          50% { transform: translate(15px, -60vh) rotate(-180deg) scale(1); }
+          90% { opacity: 1; transform: translate(-15px, -100vh) rotate(-315deg) scale(1.1); }
+          100% { transform: translate(0, -120vh) rotate(-360deg) scale(1.2); opacity: 0; }
+        }
+        @keyframes pulse-soft {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        .heart-button {
+          animation: pulse-soft 2s infinite ease-in-out;
+        }
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+      `}} />
+
+      {/* Tombol Audio */}
+      <button 
+        onClick={toggleMute} 
+        className="absolute top-4 right-4 z-50 p-3 rounded-full glass-panel hover:bg-white/20 transition-all"
+      >
+        {isMuted ? <VolumeX size={24} color="#fbcfe8" /> : <Music size={24} color="#fbcfe8" />}
+      </button>
+
+      {/* --- LAYAR AWAL (INTRO) --- */}
+      {gameState === 'intro' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+          <div className="mb-8 relative">
+            <Moon size={100} className="text-yellow-200 animate-pulse drop-shadow-lg" fill="#fef08a" />
+            <Star size={30} className="text-yellow-100 absolute -top-2 -right-4 animate-bounce" fill="#fef08a" />
+            <Star size={20} className="text-yellow-100 absolute top-10 -left-6 animate-bounce" style={{ animationDelay: '0.5s' }} fill="#fef08a" />
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-yellow-200 drop-shadow-md">
+            Waktunya Sahur! 🌙
+          </h1>
+          <p className="text-lg md:text-xl text-pink-100 mb-10 max-w-md leading-relaxed">
+            Hai sayang... Bangun yuk! <br/>
+            Aku punya kejutan kecil buat kamu. Kumpulin energi sahurnya ya!
+          </p>
+
+          <button 
+            onClick={startGame}
+            className="heart-button group relative px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 rounded-full text-xl font-bold text-white shadow-[0_0_20px_rgba(244,114,182,0.6)] hover:shadow-[0_0_30px_rgba(244,114,182,0.8)] transition-all active:scale-95 flex items-center gap-3"
+          >
+            Buka Kejutan <Heart className="group-hover:text-pink-200 transition-colors" fill="currentColor" />
+          </button>
+        </div>
+      )}
+
+      {/* --- LAYAR BERMAIN (PLAYING) --- */}
+      {gameState === 'playing' && (
+        <div className="absolute inset-0 flex flex-col" ref={gameAreaRef}>
+          {/* HUD / Skor */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md">
+            <div className="glass-panel rounded-full p-4 flex flex-col items-center shadow-lg">
+              <span className="text-pink-100 font-medium mb-2 text-sm md:text-base">
+                Kumpulkan Cinta & Menu Sahur: {score} / {targetScore}
+              </span>
+              <div className="w-full bg-black/30 rounded-full h-4 overflow-hidden p-1">
+                <div 
+                  className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full transition-all duration-300 ease-out flex items-center justify-end pr-1"
+                  style={{ width: `${(score / targetScore) * 100}%` }}
+                >
+                  <Heart size={12} fill="white" className="animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Item yang Mengambang */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {items.map(item => (
+              <div
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className="absolute cursor-pointer pointer-events-auto hover:scale-125 transition-transform flex items-center justify-center"
+                style={{
+                  left: `${item.left}%`,
+                  bottom: '0px', /* Mulai dari paling bawah */
+                  fontSize: `${item.size}rem`,
+                  animation: `${item.sway > 0 ? 'floatUpRight' : 'floatUpLeft'} ${item.duration}s linear forwards`,
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))'
+                }}
+              >
+                {item.emoji}
+              </div>
+            ))}
+          </div>
+          
+          <div className="absolute bottom-10 left-0 w-full text-center text-white/60 font-medium text-sm pointer-events-none drop-shadow-md">
+            Tap/Klik emoji yang muncul! 👆
+          </div>
+        </div>
+      )}
+
+      {/* --- LAYAR MENANG (PESAN ROMANTIS) --- */}
+      {gameState === 'win' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 animate-in fade-in zoom-in duration-700">
+          
+          {/* Efek Confetti Hati */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+             {[...Array(20)].map((_, i) => (
+               <Heart 
+                 key={i} 
+                 size={Math.random() * 20 + 10} 
+                 className="absolute text-pink-400 opacity-60"
+                 fill="currentColor"
+                 style={{
+                   left: `${Math.random() * 100}%`,
+                   top: `-10%`,
+                   animation: `floatUpRight ${Math.random() * 4 + 6}s linear infinite`,
+                   animationDelay: `${Math.random() * 2}s`
+                 }}
+               />
+             ))}
+          </div>
+
+          <div className="glass-panel p-8 md:p-10 rounded-3xl max-w-lg w-full shadow-2xl relative z-20 border border-pink-300/30 bg-white/10">
+            <Sparkles className="absolute -top-6 -left-6 text-yellow-300 w-12 h-12 animate-pulse" />
+            <Sparkles className="absolute -bottom-6 -right-6 text-pink-300 w-12 h-12 animate-pulse" />
+            
+            <Heart className="w-20 h-20 text-rose-400 mx-auto mb-6 heart-button drop-shadow-[0_0_15px_rgba(2fb,113,133,0.8)]" fill="currentColor" />
+            
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white drop-shadow-md">
+              Selamat Sahur, Kesayanganku! 🥰
+            </h2>
+            
+            <div className="space-y-4 text-pink-50 text-base md:text-lg leading-relaxed">
+              <p>
+                Cilukba! Makasih ya udah kumpulin cintanya. Hehehe.
+              </p>
+              <p>
+                Sekarang buruan bangun, cuci muka, terus makan sahur yang banyak biar kuat puasanya seharian. Jangan lupa minum air putih yang cukup ya sayang!
+              </p>
+              <p className="font-medium text-pink-200 pt-2 border-t border-pink-300/30">
+                Semoga puasa kamu hari ini lancar, secerah senyum kamu pas baca pesan ini. (Eaaaa 🫣)
+              </p>
+              <p className="font-bold text-xl text-rose-300 pt-2 drop-shadow-md">
+                I Love You More! ❤️
+              </p>
+            </div>
+            
+            <button 
+              onClick={() => { setGameState('intro'); setScore(0); }}
+              className="mt-8 px-6 py-2 rounded-full border border-pink-300/50 hover:bg-pink-300/20 text-sm transition-colors text-pink-100"
+            >
+              Main Lagi
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Background Bintang Dinamis */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+         {[...Array(30)].map((_, i) => (
+           <div 
+             key={i}
+             className="absolute bg-white rounded-full animate-pulse"
+             style={{
+               width: Math.random() * 3 + 1 + 'px',
+               height: Math.random() * 3 + 1 + 'px',
+               left: Math.random() * 100 + '%',
+               top: Math.random() * 100 + '%',
+               opacity: Math.random() * 0.5 + 0.2,
+               animationDuration: Math.random() * 3 + 2 + 's'
+             }}
+           />
+         ))}
+      </div>
+
+    </div>
+  );
+}
