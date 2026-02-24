@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Waktunya Sahur, Sayang! 🌙</title>
+    <title>Waktunya Sahur! 🌙</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -12,17 +12,9 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
+            padding: 0;
+            background-color: #1e1b4b; /* Warna gelap cadangan untuk body */
             overflow: hidden;
-            /* FIX 2: Memaksa background sepenuh layar */
-            height: 100vh; 
-            width: 100vw;
-            background: linear-gradient(to bottom right, #1e1b4b, #581c87, #be185d);
-            
-            /* FIX 3: Mencegah zoom/scroll tidak sengaja saat tap-tap di layar HP */
-            touch-action: none; 
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
         }
 
         @keyframes floatUpRight {
@@ -43,12 +35,12 @@
 
         .floating-item {
             position: absolute;
-            bottom: 0;
+            bottom: -60px; /* Mulai dari luar layar bawah agar lebih smooth */
             cursor: pointer;
             user-select: none;
             transition: transform 0.2s;
-            /* Tambahan agar area klik emoji di HP lebih nyaman */
-            padding: 10px; 
+            padding: 15px; /* Area sentuh HP diperbesar */
+            -webkit-tap-highlight-color: transparent; /* Hilangkan efek kotak biru saat ditap di HP */
         }
 
         .glass-panel {
@@ -74,48 +66,61 @@
         }
     </style>
 </head>
-<body class="text-white relative"> <button onclick="toggleMute()" class="absolute top-4 right-4 z-50 p-3 rounded-full glass-panel hover:bg-white/20 transition-all">
-        <i id="audio-icon" data-lucide="music" class="text-pink-200"></i>
-    </button>
+<body>
 
-    <div id="intro-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
-        <div class="mb-8 relative">
-            <i data-lucide="moon" class="w-24 h-24 text-yellow-200 fill-yellow-200 animate-pulse"></i>
-            <i data-lucide="star" class="w-8 h-8 text-yellow-100 fill-yellow-100 absolute -top-2 -right-4 animate-bounce"></i>
-        </div>
-        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-yellow-200">
-            Waktunya Sahur! 🌙
-        </h1>
-        <p class="text-lg text-pink-100 mb-10 max-w-md">
-            Hai sayang... Bangun yuk!<br>Aku punya kejutan kecil buat kamu.
-        </p>
-        <button onclick="startGame()" class="heart-button px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 rounded-full text-xl font-bold flex items-center gap-3 shadow-lg">
-            Buka Kejutan <i data-lucide="heart" class="fill-current"></i>
+    <div class="fixed inset-0 w-full h-full bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 text-white overflow-hidden" style="touch-action: none; -webkit-user-select: none; user-select: none;">
+        
+        <div id="stars-container" class="absolute inset-0 pointer-events-none z-0"></div>
+
+        <button onclick="toggleMute()" class="absolute top-4 right-4 z-50 p-3 rounded-full glass-panel hover:bg-white/20 transition-all -webkit-tap-highlight-color-transparent">
+            <i id="audio-icon" data-lucide="music" class="text-pink-200"></i>
         </button>
-    </div>
 
-    <div id="game-screen" class="hidden absolute inset-0 w-full h-full">
-        <div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md">
-            <div class="glass-panel rounded-full p-4 flex flex-col items-center">
-                <span id="score-text" class="text-pink-100 text-sm mb-2">Kumpulkan Energi: 0 / 20</span>
-                <div class="w-full bg-black/30 rounded-full h-3 overflow-hidden relative">
-                    <div id="progress-bar" class="absolute left-0 top-0 bg-gradient-to-r from-pink-400 to-rose-500 h-full w-0 transition-all duration-300"></div>
+        <div id="intro-screen" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
+            <div class="mb-8 relative">
+                <i data-lucide="moon" class="w-24 h-24 text-yellow-200 fill-yellow-200 animate-pulse"></i>
+                <i data-lucide="star" class="w-8 h-8 text-yellow-100 fill-yellow-100 absolute -top-2 -right-4 animate-bounce"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-yellow-200 drop-shadow-md">
+                Waktunya Sahur! 🌙
+            </h1>
+            <p class="text-lg text-pink-100 mb-10 max-w-md">
+                Hai sayang... Bangun yuk!<br>Aku punya kejutan kecil buat kamu.
+            </p>
+            <button onclick="startGame()" class="heart-button px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-400 rounded-full text-xl font-bold flex items-center gap-3 shadow-lg -webkit-tap-highlight-color-transparent outline-none">
+                Buka Kejutan <i data-lucide="heart" class="fill-current"></i>
+            </button>
+        </div>
+
+        <div id="game-screen" class="hidden absolute inset-0 w-full h-full">
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md">
+                <div class="glass-panel rounded-full p-4 flex flex-col items-center shadow-lg">
+                    <span id="score-text" class="text-pink-100 text-sm mb-2 font-semibold">Kumpulkan Energi: 0 / 20</span>
+                    <div class="w-full bg-black/30 rounded-full h-3 overflow-hidden relative">
+                        <div id="progress-bar" class="absolute left-0 top-0 bg-gradient-to-r from-pink-400 to-rose-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div id="game-area" class="absolute inset-0 w-full h-full overflow-hidden"></div>
-    </div>
-
-    <div id="win-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
-        <div class="glass-panel p-8 rounded-3xl max-w-lg shadow-2xl">
-            <i data-lucide="heart" class="w-16 h-16 text-rose-400 mx-auto mb-4 fill-current heart-button"></i>
-            <h2 class="text-3xl font-bold mb-4">Selamat Sahur, Sayang! 🥰</h2>
-            <div class="space-y-4 text-pink-50">
-                <p>Makasih ya udah kumpulin cintanya. Hehehe.</p>
-                <p>Sekarang buruan bangun, terus makan sahur yang banyak biar kuat puasanya seharian ya!</p>
-                <p class="font-bold text-xl text-rose-300 pt-2">I Love You More! ❤️</p>
+            <div id="game-area" class="absolute inset-0 w-full h-full overflow-hidden"></div>
+            
+            <div class="absolute bottom-10 left-0 w-full text-center text-white/60 font-medium text-sm pointer-events-none drop-shadow-md">
+                Tap/Klik emoji yang muncul! 👆
             </div>
-            <button onclick="location.reload()" class="mt-8 text-sm text-pink-200 underline">Main Lagi</button>
+        </div>
+
+        <div id="win-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 w-full h-full">
+            <div class="glass-panel p-8 rounded-3xl max-w-lg shadow-2xl bg-white/10 border border-pink-300/30">
+                <i data-lucide="heart" class="w-20 h-20 text-rose-400 mx-auto mb-6 fill-current heart-button drop-shadow-[0_0_15px_rgba(2fb,113,133,0.8)]"></i>
+                <h2 class="text-3xl font-bold mb-4 text-white drop-shadow-md">Selamat Sahur, Sayang! 🥰</h2>
+                <div class="space-y-4 text-pink-50 text-base">
+                    <p>Makasih ya udah kumpulin cintanya. Hehehe.</p>
+                    <p>Sekarang buruan bangun, terus makan sahur yang banyak biar kuat puasanya seharian ya!</p>
+                    <p class="font-bold text-xl text-rose-300 pt-2 drop-shadow-md">I Love You More! ❤️</p>
+                </div>
+                <button onclick="location.reload()" class="mt-8 px-6 py-2 rounded-full border border-pink-300/50 hover:bg-pink-300/20 text-sm transition-colors text-pink-100">
+                    Main Lagi
+                </button>
+            </div>
         </div>
     </div>
 
@@ -129,6 +134,21 @@
         const emojis = ['❤️', '💖', '🍗', '🍳', '🥛', '🍚', '🥞', '🥰'];
         const audio = new Audio('https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3');
         audio.loop = true;
+
+        // Render Bintang ke dalam container
+        const starsContainer = document.getElementById('stars-container');
+        for (let i = 0; i < 30; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.opacity = Math.random() * 0.5 + 0.2;
+            star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            starsContainer.appendChild(star);
+        }
 
         function toggleMute() {
             isMuted = !isMuted;
@@ -166,7 +186,6 @@
         function createItem() {
             const area = document.getElementById('game-area');
             const item = document.createElement('div');
-            const id = Math.random().toString(36).substr(2, 9);
             
             const left = Math.random() * 80 + 10;
             const emoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -178,13 +197,14 @@
             item.style.left = left + '%';
             item.style.fontSize = (Math.random() * 1.5 + 2) + 'rem';
             item.style.animation = `${isRight ? 'floatUpRight' : 'floatUpLeft'} ${duration}s linear forwards`;
+            item.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))';
 
-            // Menggunakan event touchstart agar lebih responsif di HP
+            // Event listener khusus agar tap di HP langsung merespon tanpa delay
             item.addEventListener('touchstart', handleTap, {passive: false});
             item.addEventListener('mousedown', handleTap);
 
             function handleTap(e) {
-                e.preventDefault(); // Mencegah klik ganda di HP
+                e.preventDefault();
                 score++;
                 playPopSound();
                 updateUI();
@@ -205,20 +225,6 @@
             clearInterval(spawnInterval);
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('win-screen').classList.remove('hidden');
-        }
-
-        // Background Bintang
-        for (let i = 0; i < 30; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            const size = Math.random() * 3 + 1;
-            star.style.width = size + 'px';
-            star.style.height = size + 'px';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.opacity = Math.random();
-            star.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            document.body.appendChild(star);
         }
     </script>
 </body>
